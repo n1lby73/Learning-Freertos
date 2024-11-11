@@ -6,7 +6,7 @@
 #include "semphr.h"
 
 
-TaskHandle_t blinkfunc, printFunc, deleteFunc, tempReadingFunc, spamQueue, mutex1, mutex2;
+TaskHandle_t blinkfunc, printFunc, deleteFunc, tempReadingFunc, spamQueue;
 
 QueueHandle_t learningQueue;
 
@@ -143,42 +143,6 @@ void deleteTaskOne(void* pvParameters) {
 
 }
 
-void mutexTaskOne(void* pvParameters) {
-
-	int localValue;
-
-	for (;;) {
-
-		localValue = globalCountToImplementMutex;
-
-		localValue++;
-
-		globalCountToImplementMutex = localValue;
-
-		printf("\n\nGlobal value from MUTEX 1 is: &d\n\n", globalCountToImplementMutex);
-
-		vTaskDelay(1000 / portTICK_PERIOD_MS);
-	}
-}
-
-void mutexTaskTwo(void* pvParameters) {
-
-	int localValue;
-
-	for (;;) {
-
-		localValue = globalCountToImplementMutex;
-
-		localValue++;
-
-		globalCountToImplementMutex = localValue;
-
-		rintf("\n\nGlobal value from MUTEX 2 is: &d\n\n", globalCountToImplementMutex);
-
-		vTaskDelay(2000 / portTICK_PERIOD_MS);
-	}
-}
-
 void main() {
 
 	learningQueue = xQueueCreate(5, sizeof(int));
@@ -187,8 +151,6 @@ void main() {
 	xTaskCreate(blinkLed, "funcToBlinkLed", 1, NULL, 3, &blinkfunc);
 	xTaskCreate(printString, "funcToPrintString", 1, NULL, 3, &printFunc);
 	xTaskCreate(queueSpammer, "funcToSpamQueue", 1, NULL, 3, &spamQueue);
-	xTaskCreate(mutexTaskOne, "funcForMutex", 1, NULL, 5, &mutex1);
-	xTaskCreate(mutexTaskTwo, "funcForMutex2", 1, NULL, 5, &mutex2);
 	//xTaskCreate(deleteTaskOne, "funcToDeletTask", 500, NULL, 0, &deleteFunc);
 	vTaskStartScheduler();
 
