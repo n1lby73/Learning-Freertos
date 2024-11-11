@@ -5,7 +5,7 @@
 #include "queue.h"
 
 
-TaskHandle_t blinkfunc, printFunc, deleteFunc, tempReadingFunc;
+TaskHandle_t blinkfunc, printFunc, deleteFunc, tempReadingFunc, spamQueue;
 
 QueueHandle_t learningQueue;
 
@@ -29,14 +29,14 @@ void tempReading(void* pvParameters) {
 
 			printf("Reading sent to queue\n");
 
-			vTaskDelay(200 / portTICK_PERIOD_MS);
+			vTaskDelay(50 / portTICK_PERIOD_MS);
 
 		}
 
 		else {
 
 			printf("Add to queue operation failed\n");
-			vTaskDelay(200 / portTICK_PERIOD_MS);
+			vTaskDelay(100 / portTICK_PERIOD_MS);
 
 		}
 	}
@@ -44,29 +44,61 @@ void tempReading(void* pvParameters) {
 }
 void blinkLed(void* pvParameters) {
 
-	int recieveQueue;
-
 	while (1) {
 
-		if (xQueueReceive(learningQueue, &recieveQueue, 500) == pdPASS) {
+		printf("on\n");
+		vTaskDelay(500 / portTICK_PERIOD_MS);
+		printf("off\n");
+		vTaskDelay(500 / portTICK_PERIOD_MS);
 
-			printf("on\n");
-			vTaskDelay(500 / portTICK_PERIOD_MS);
-			printf("off\n");
-			vTaskDelay(500 / portTICK_PERIOD_MS);
-
-		}
 	}
 }
 
 void printString(void* pvParameters) {
+
+	int recieveQueue;
+
 	for (;;) {
 
-		printf("my name\n");
-		vTaskDelay(100 / portTICK_PERIOD_MS);
+		if (xQueueReceive(learningQueue, &recieveQueue, 500) == pdPASS) {
 
+			printf("Received Temperature reading is: %d\n", recieveQueue);
+			vTaskDelay(10000 / portTICK_PERIOD_MS);
 
+		}
+		
 	}
+}
+
+void queueSpammer(void* pvParameters) {
+
+	int spammer = 650;
+	int i = 1;
+
+	for (;;) {
+	
+		while (i > 0) {
+
+			spammer += 100;
+			
+			printf("Queue space available is: %d\n", uxQueueSpacesAvailable(learningQueue));
+
+			if (xQueueSend(learningQueue, &spammer, 500) == pdPASS) {
+
+				printf("Sent %d to queue\n", spammer);
+				vTaskDelay(pdMS_TO_TICKS(1));
+
+			}
+
+			else {
+
+				printf("Spam is now sucessful\n");
+				vTaskDelay(1 / portTICK_PERIOD_MS);
+
+			}
+		}
+	}
+
 }
 
 void deleteTaskOne(void* pvParameters) {
@@ -107,10 +139,11 @@ void main() {
 
 	learningQueue = xQueueCreate(5, sizeof(int));
 
-	xTaskCreate(tempReading, "funcToSimulateSensorValue", 500, NULL, 3, &tempReadingFunc);
-	xTaskCreate(blinkLed, "funcToBlinkLed", 500, NULL, 2, &blinkfunc);
-	xTaskCreate(printString, "funcToPrintString", 500, NULL, 1, &printFunc);
-	xTaskCreate(deleteTaskOne, "funcToDeletTask", 500, NULL, 0, &deleteFunc);
+	xTaskCreate(tempReading, "funcToSimulateSensorValue", 1, NULL, 3, &tempReadingFunc);
+	xTaskCreate(blinkLed, "funcToBlinkLed", 1, NULL, 3, &blinkfunc);
+	xTaskCreate(printString, "funcToPrintString", 1, NULL, 3, &printFunc);
+	xTaskCreate(queueSpammer, "funcToSpamQueue", 1, NULL, 3, &spamQueue);
+	//xTaskCreate(deleteTaskOne, "funcToDeletTask", 500, NULL, 0, &deleteFunc);
 	vTaskStartScheduler();
 
 	for (;;) {}
