@@ -153,11 +153,13 @@ void mutexTaskOne(void* pvParameters) {
 
 		localValue++;
 
+		vTaskDelay(1000 / portTICK_PERIOD_MS);
+
 		globalCountToImplementMutex = localValue;
 
-		printf("\n\nGlobal value from MUTEX 1 is: &d\n\n", globalCountToImplementMutex);
+		printf("\n\nGlobal value from MUTEX 1 is: %d\n\n", globalCountToImplementMutex);
 
-		vTaskDelay(1000 / portTICK_PERIOD_MS);
+		//vTaskDelay(1000 / portTICK_PERIOD_MS);c
 	}
 }
 
@@ -173,9 +175,9 @@ void mutexTaskTwo(void* pvParameters) {
 
 		globalCountToImplementMutex = localValue;
 
-		rintf("\n\nGlobal value from MUTEX 2 is: &d\n\n", globalCountToImplementMutex);
+		printf("\n\nGlobal value from MUTEX 2 is: %d\n\n", globalCountToImplementMutex);
 
-		vTaskDelay(2000 / portTICK_PERIOD_MS);
+		vTaskDelay(500 / portTICK_PERIOD_MS);
 	}
 }
 
