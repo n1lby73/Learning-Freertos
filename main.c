@@ -9,6 +9,7 @@
 TaskHandle_t blinkfunc, printFunc, deleteFunc, tempReadingFunc, spamQueue, mutex1, mutex2;
 
 QueueHandle_t learningQueue;
+SemaphoreHandle_t learningMutex;
 
 int globalCountToImplementMutex = 0;
 
@@ -149,17 +150,27 @@ void mutexTaskOne(void* pvParameters) {
 
 	for (;;) {
 
-		localValue = globalCountToImplementMutex;
+		if (xSemaphoreTake(learningMutex, 10) == pdTRUE) {
 
-		localValue++;
+			localValue = globalCountToImplementMutex;
 
-		vTaskDelay(1000 / portTICK_PERIOD_MS);
+			localValue++;
 
-		globalCountToImplementMutex = localValue;
+			vTaskDelay(1000 / portTICK_PERIOD_MS);
 
-		printf("\n\nGlobal value from MUTEX 1 is: %d\n\n", globalCountToImplementMutex);
+			globalCountToImplementMutex = localValue;
 
-		//vTaskDelay(1000 / portTICK_PERIOD_MS);c
+			printf("\n\nGlobal value from MUTEX 1 is: %d\n\n", globalCountToImplementMutex);
+
+			xSemaphoreGive(learningMutex);
+
+			vTaskDelay(1000 / portTICK_PERIOD_MS);
+		}
+
+		else {
+
+			printf("Mutex one is unsuccesful\n");
+		}
 	}
 }
 
@@ -169,21 +180,36 @@ void mutexTaskTwo(void* pvParameters) {
 
 	for (;;) {
 
-		localValue = globalCountToImplementMutex;
+		if (xSemaphoreTake(learningMutex, 10) == pdTRUE) {
 
-		localValue++;
+			localValue = globalCountToImplementMutex;
 
-		globalCountToImplementMutex = localValue;
+			localValue++;
 
-		printf("\n\nGlobal value from MUTEX 2 is: %d\n\n", globalCountToImplementMutex);
+			globalCountToImplementMutex = localValue;
 
-		vTaskDelay(500 / portTICK_PERIOD_MS);
+			printf("\n\nGlobal value from MUTEX 2 is: %d\n\n", globalCountToImplementMutex);
+
+			xSemaphoreGive(learningMutex);
+
+			vTaskDelay(500 / portTICK_PERIOD_MS);
+
+
+		}
+
+		else {
+
+			printf("Mutex two failed\n");
+
+		}
+
 	}
 }
 
 void main() {
 
 	learningQueue = xQueueCreate(5, sizeof(int));
+	learningMutex = xSemaphoreCreateMutex();
 
 	xTaskCreate(tempReading, "funcToSimulateSensorValue", 1, NULL, 3, &tempReadingFunc);
 	xTaskCreate(blinkLed, "funcToBlinkLed", 1, NULL, 3, &blinkfunc);
@@ -191,7 +217,7 @@ void main() {
 	xTaskCreate(queueSpammer, "funcToSpamQueue", 1, NULL, 3, &spamQueue);
 	xTaskCreate(mutexTaskOne, "funcForMutex", 1, NULL, 5, &mutex1);
 	xTaskCreate(mutexTaskTwo, "funcForMutex2", 1, NULL, 5, &mutex2);
-	//xTaskCreate(deleteTaskOne, "funcToDeletTask", 500, NULL, 0, &deleteFunc);
+	xTaskCreate(deleteTaskOne, "funcToDeletTask", 1, NULL, 1, &deleteFunc);
 	vTaskStartScheduler();
 
 	for (;;) {}
